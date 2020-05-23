@@ -33,3 +33,22 @@ $ gunicorn -w 4 --bind 0.0.0.0:5000 app:app
 [2020-05-23 18:50:56 +0100] [14885] [INFO] Booting worker with pid: 14885
 [2020-05-23 18:50:56 +0100] [14886] [INFO] Booting worker with pid: 14886
 ```
+
+## Create a Docker Image
+
+The definition for the Docker image can be found in the [Dockerfile](Dockerfile).
+
+As a base image for our docker image we are using one of the [official docker images](https://hub.docker.com/_/python/) for python. For our application we use the tag `python:3.8-slim-buster`. The `3.8` stands for the python version, the `buster` stands for the [version of debian](https://www.debian.org/releases/buster/) that is used as the underlying image, and the `slim` stands for the [image variant](https://hub.docker.com/_/debian?tab=description) of debian which is more or less half the size as the "full fledged" debian image.
+
+Other than that we just need to copy our `requirements.pip` and `app.py` to the workdir of our docker image and define the initial command to be executed when our image is ran.
+
+```bash
+$ docker run -it --name k8s-demo k8s-demo:latest
+[2020-05-23 19:59:05 +0000] [6] [INFO] Starting gunicorn 20.0.4
+[2020-05-23 19:59:05 +0000] [6] [INFO] Listening at: http://0.0.0.0:11130 (6)
+[2020-05-23 19:59:05 +0000] [6] [INFO] Using worker: sync
+[2020-05-23 19:59:05 +0000] [8] [INFO] Booting worker with pid: 8
+[2020-05-23 19:59:05 +0000] [9] [INFO] Booting worker with pid: 9
+[2020-05-23 19:59:05 +0000] [10] [INFO] Booting worker with pid: 10
+[2020-05-23 19:59:05 +0000] [11] [INFO] Booting worker with pid: 11
+```
