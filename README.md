@@ -7,6 +7,7 @@ This project can be used as a reference to deploy a simple flask application usi
 - [Helm](https://helm.sh/)
 - [Nginx Ingress Controller](https://kubernetes.github.io/ingress-nginx/)
 - [Certmanager](https://cert-manager.io/docs/) + [Let’s Encrypt](https://letsencrypt.org/) for TLS
+- [GitHub Actions](.github/workflows/deploy.yml) for CI/CD
 
 ## Our application
 
