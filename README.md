@@ -53,3 +53,19 @@ $ docker run -it --name k8s-demo k8s-demo:latest
 [2020-05-23 19:59:05 +0000] [10] [INFO] Booting worker with pid: 10
 [2020-05-23 19:59:05 +0000] [11] [INFO] Booting worker with pid: 11
 ```
+
+## Create an Helm Chart
+
+The easiest way to create a chart is by using the `helm create` [command](https://helm.sh/docs/helm/helm_create/#helm).
+The default chart already brings some really interesting things that make it easier for us to be following some kubernetes best practices:
+
+- Standard labels that are added to all the kubernetes resources
+- A [Deployment](./chart/k8s-demo/templates/deployment.yaml) file with configurable resources, nodeSelectors, affinity and tolerations.
+- An [HorizontalPodAutoscaler](./chart/k8s-demo/templates/hpa.yaml) that will add or remove containers/pods based on a target CPU and Memory usage.
+- A new [ServiceAccount](chart/k8s-demo/templates/serviceaccount.yaml) specific to our application. By default, new service accounts don't have any permissions.
+- A [Service](chart/k8s-demo/templates/service.yaml) to make our application accessible by other pods **inside** the cluster.
+- An [Ingress](chart/k8s-demo/templates/ingress.yaml) to make our application accessible **outside** of our cluster.
+- A [Helm test](chart/k8s-demo/templates/tests/test-connection.yaml) that can be used to check if our application is running after we install it. By default it runs a simple `$ wget {service.name}:{service.port}`.
+
+In this repository the helm chart can be found under the `chart/` directory.
+The only change we need to do to have a working Helm chart is to change the `image.repostory` in the [values.yaml](chart/k8s-demo/values.yaml) to use our docker image.
