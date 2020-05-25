@@ -21,3 +21,19 @@ version: 0.1.0
 # incremented each time you make changes to the application. Versions are not expected to
 # follow Semantic Versioning. They should reflect the version the application is using.
 appVersion: 1.16.0
+
+dependencies:
+- name: nginx-ingress
+  alias: nginxingress
+  version: 1.38.0
+  repository: https://kubernetes-charts.storage.googleapis.com/
+  condition: nginxingress.enabled
+  tags:
+    - ingress
+- name: cert-manager
+  alias: certmanager
+  version: v0.15.0
+  repository: https://charts.jetstack.io
+  condition: certmanager.enabled
+  tags:
+    - ingress

@@ -45,9 +45,9 @@ service:
 ingress:
   enabled: false
   annotations:
-    {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
+    kubernetes.io/ingress.class: k8s-demo-nginx
+    kubernetes.io/tls-acme: "true"
+    cert-manager.io/issuer: k8s-demo-issuer
   hosts:
     - host: chart-example.local
       paths: []
@@ -81,3 +81,22 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+nginxingress:
+  enabled: false
+  controller:
+    ingressClass: k8s-demo-nginx
+    publishService:
+      enabled: true
+    #service:  ## There are some problems w/ helm 3 https://github.com/helm/helm/issues/6378#issuecomment-557746499
+    #  clusterIP: "-"
+    defaultBackend:
+      clusterIP: "-"
+
+
+certmanager:
+  #enabled: false
+  issuer:
+    # Email address used for ACME registration
+    emailAddress: xxxxxxx@example.com
+    ingressClass: k8s-demo-nginx
