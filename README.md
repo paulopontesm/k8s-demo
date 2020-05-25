@@ -1,6 +1,8 @@
 # K8s Demo
 
-This project can be used as a reference to deploy a simple flask application using:
+This project can be used as a reference to deploy a simple flask application running in AWS in Kubernetes.
+
+The stack for this example is the following:
 
 - [Docker](https://docs.docker.com/get-started/)
 - A [Kubernetes](https://kubernetes.io/docs/setup/) "cluster" running in a [Ubuntu](https://ubuntu.com/) machine with [Microk8s](https://microk8s.io/#get-started) on [AWS EC2](https://aws.amazon.com/pt/ec2/)
@@ -69,3 +71,47 @@ The default chart already brings some really interesting things that make it eas
 
 In this repository the helm chart can be found under the `chart/` directory.
 The only change we need to do to have a working Helm chart is to change the `image.repostory` in the [values.yaml](chart/k8s-demo/values.yaml) to use our docker image.
+
+## Infrastructure
+
+There are thousands of ways of deploying a kubernetes cluster, some are free and some are not.
+The goal of this demo is to deploy the application in AWS, and unfortunately AWS doesn't include
+their managed Kubernetes solution (AWS EKS) in the free tier.
+For this demo we are creating a simple EC2 instance running ubuntu and install MicroK8s which will be
+our lightweight kubernetes cluster.
+
+<image>
+
+Everything that is necessary is already being installed in our Ubuntu machine using the UserData that is ran when our machine starts.
+Essentially the following is installed:
+
+export AWS_SDK_LOAD_CONFIG=1
+cd backend/
+terraform init && terraform apply
+cd ../main/
+terraform init && terraform apply
+
+- Microk8s, with the following plugins enabled:
+  - DNS
+  - Storage
+- Helm
+-
+
+```bash
+  $ helm repo add stable https://kubernetes-charts.storage.googleapis.com
+```
+
+### Usage
+
+<Create a keypair >
+
+<Deploy>
+
+If are looking for a more "Production Ready" solution take a look at the Quickstart provided by AWS to create
+the EKS cluster: https://github.com/aws-quickstart/quickstart-amazon-eks.
+
+## Deploying our Application
+
+### Enable TLS
+
+## Github Action
