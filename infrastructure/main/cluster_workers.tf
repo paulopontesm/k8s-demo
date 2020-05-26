@@ -67,6 +67,56 @@ resource "aws_autoscaling_group" "workers" {
 
 }
 
+# Create kubernetes_admin_role role for aws-iam-authenticator
+resource "aws_iam_role" "kubernetes_admin_role" {
+  name               = "${var.project_slug}-kubernetes-admin"
+  assume_role_policy = data.aws_iam_policy_document.assumerole_root_policy.json
+  description        = "Kubernetes administrator role (for AWS EKS auth)"
+}
+
+# Trust relationship to limit access to the k8s admin serviceaccount
+data "aws_iam_policy_document" "assumerole_root_policy" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+  }
+}
+
+resource "aws_iam_policy" "kubernetes_admin_policy" {
+  path        = "/"
+  description = "KubernetesAdmin policy to access kubernetes cluster"
+
+  policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+              "eks:DescribeCluster",
+              "eks:ListClusters"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "kubernetes_admin_role" {
+  role       = aws_iam_role.kubernetes_admin_role.name
+  policy_arn = aws_iam_policy.kubernetes_admin_policy.arn
+
+  depends_on = [
+    aws_iam_policy.kubernetes_admin_policy,
+    aws_iam_role.kubernetes_admin_role
+  ]
+}
+
 # Get an authentication token to communicate with an EKS cluster, using the "kubernetes" provider.
 resource "kubernetes_config_map" "aws_auth" {
   metadata {
@@ -81,6 +131,10 @@ resource "kubernetes_config_map" "aws_auth" {
       groups:
         - system:bootstrappers
         - system:nodes
+    - rolearn: ${aws_iam_role.kubernetes_admin_role.arn}
+      username: admin:{{SessionName}}
+      groups:
+        - system:masters
     YAML
   }
   depends_on = [

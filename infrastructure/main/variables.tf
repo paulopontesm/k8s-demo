@@ -23,7 +23,7 @@ variable "k8s_version" {
 variable "k8s_worker_type" {
   description = "Instance type used for kubernetes worker nodes"
   type        = string
-  default     = "m5.2xlarge"
+  default     = "t2.medium"
 }
 
 variable "k8s_worker_bootstrap_extra_flags" {
