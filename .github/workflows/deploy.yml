@@ -51,11 +51,13 @@ jobs:
       - name: Terraform Init
         run: |
           export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          terraform init -backend-config="bucket=terraform-state-$ACCOUNT_ID"
+          export REGION=${AWS_DEFAULT_REGION:-$(aws configure get region)}
+          terraform init -backend-config="bucket=terraform-state-$ACCOUNT_ID" -backend-config="region=$REGION"
         working-directory: infrastructure/main/
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
 
       - name: Terraform Format
         run: terraform fmt -check
@@ -67,6 +69,7 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
@@ -75,14 +78,16 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
 
-      - name: Terraform Apply
+      - name: Helm Install
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         run: |
           aws eks update-kubeconfig --name k8sdemo-cluster
-          kubectl create namespace k8s-demo
           kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v0.15.0/cert-manager.crds.yaml
+          helm dep up k8s-demo/
           helm upgrade --install k8s-demo k8s-demo/ --namespace k8s-demo \
+            --create-namespace \
             --set ingress.enabled=true \
             --set ingress.hosts[0].host=${{ secrets.DOMAIN_NAME }} \
             --set ingress.hosts[0].paths[0]="/" \
@@ -90,8 +95,10 @@ jobs:
             --set ingress.tls[0].secretName=k8s-demo-tls \
             --set nginxingress.enabled=true \
             --set certmanager.enabled=true \
-            --set certmanager.issuer.email=${{ secrets.CERTIFICATE_REGISTRATION_EMAIL }}
+            --set certmanager.issuer.email=${{ secrets.CERTIFICATE_REGISTRATION_EMAIL }} \
+            --set image.tag="sha-$(git rev-parse --short HEAD)"
         working-directory: chart/
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
