@@ -1,4 +1,4 @@
-name: Build test infrastructure deploy
+name: Build docker - deploy infrastructure - deploy helm
 
 on:
   push:

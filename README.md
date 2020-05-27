@@ -17,12 +17,12 @@ The stack for this example is the following:
 
 To use this repository locally you will need the following tools:
 
-- python 3+
-- git
-- kubectl
-- helm 3+
-- awscli
-- terraform 0.12+
+- [python 3+](https://www.python.org/downloads/)
+- [git](https://git-scm.com/downloads)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+- [helm 3+](https://helm.sh/docs/intro/install/)
+- [awscli](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html)
+- [terraform 0.12+](https://www.terraform.io/downloads.html)
 
 ## How to use this project
 
@@ -31,7 +31,27 @@ To use this repository locally you will need the following tools:
 1. Clone this repository
 2. Change the target docker image in the [chart/k8s-demo/values.yaml](chart/k8s-demo/values.yaml) to use your docker repository.
 3. Create terraform backend in your account
-4. Setup secrets on github actions
+4. Setup secrets on github actions. On you repo go to `Settings > Secrets` and make sure you create the following secrets:
+
+   ```
+   AWS_ACCESS_KEY_ID=AXXXXXXXXXXXXXXXXX  The AWS access key used to create resources in AWS#
+   AWS_SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxx # The AWS secret used to create resources in AWS
+   AWS_DEFAULT_REGION=eu-west-1 # The target AWS region to deploy your resources
+   CERTIFICATE_REGISTRATION_EMAIL=info@example.com # This email will be associated with the SSL certificate that is created automatically
+   DOCKER_USERNAME=user # Username for dockerhub
+   DOCKER_PASSWORD=xxxxx # Password for dockerhub
+   DOCKER_REPOSITORY=paulopontesm/k8s-demo # Name of the repository in dockerhub
+   DOMAIN_NAME=k8s-demo.example.com # Domain name where the service will be available.
+   ```
+
+   Your secrets page should look like this:
+   ![github action secrets](images/github_actions_secret.png)
+
+5. When the github action ran successfully, go to the step called "Get Ingress Details" and create a CNAME record on your DNS that points to the content that you can find in the ADDRESS field.
+
+   ![github action get ingress](images/github_actions_get_ingress.png)
+
+6. Try to access the cluster from your laptop by configuring the correct AWS credentials by following [this](#access-the-cluster) instructions.
 
 ## What is in this repository
 
@@ -148,10 +168,11 @@ It also enables some nice things, like:
 
 #### Usage
 
-Assuming you have your `~/.aws/credentials` correctly configured:
+Assuming you have your `~/.aws/credentials` correctly configured.
 
 ```bash
 export AWS_SDK_LOAD_CONFIG=1 # Tell the sdk from terraform to load the aws config
+export AWS_DEFAULT_REGION=eu-west-1 # choose your region
 # export AWS_PROFILE=sandbox_role  # Setup a correct AWS_PROFILE if needed
 ```
 
@@ -177,16 +198,30 @@ After you have you backend storage created, you can deploy the entire infrastruc
 ```bash
 cd ../main/
 export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-export REGION=$(python -c 'import boto3; print(boto3.Session().region_name)')
+export REGION=${AWS_DEFAULT_REGION:-$(aws configure get region)}
 terraform init -backend-config="bucket=terraform-state-$ACCOUNT_ID" -backend-config="region=$REGION"
 terraform apply
 ```
 
 After 15-20m the entire infrastructure should be created.
-You can now configure your local kubectl to access the new kubernetes cluster:
+You can now configure your local kubectl to access the new kubernetes cluster.
+
+##### Access the cluster
+
+To be able to access the kubernetes cluster you need to add the following role to your `~/.aws/credentials` file:
+
+**!!! IMPORTANT:** don't forget to replace the ACCOUNT_ID
+
+```yaml
+[k8sdemo-kubernetes-admin]
+role_arn = arn:aws:iam::$ACCOUNT_ID:role/k8sdemo-kubernetes-admin
+source_profile = default
+```
+
+Now use that profile to update our kubeconfig:
 
 ```bash
-$ aws eks update-kubeconfig --name k8sdemo-cluster
+$ aws eks update-kubeconfig --name k8sdemo-cluster --profile k8sdemo-kubernetes-admin
 ...
 $ kubectl get pods --all-namespaces
 ```
@@ -263,9 +298,3 @@ k8s-demo   k8s-demo.arvoros.com   ad6efd9329ed411ea8d7d02ae17452ae-1611130781.eu
 ```
 
 Now, you can got to your DNS provider and create a CNAME record pointing your domain to the `ADDRESS` of your service.
-
-## Github Action
-
-```
-
-```
