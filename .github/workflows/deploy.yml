@@ -1,4 +1,4 @@
-name: Build test deploy
+name: Build test infrastructure deploy
 
 on:
   push:
@@ -88,6 +88,7 @@ jobs:
           helm dep up k8s-demo/
           helm upgrade --install k8s-demo k8s-demo/ --namespace k8s-demo \
             --create-namespace \
+            --atomic \
             --set ingress.enabled=true \
             --set ingress.hosts[0].host=${{ secrets.DOMAIN_NAME }} \
             --set ingress.hosts[0].paths[0]="/" \
@@ -99,6 +100,14 @@ jobs:
             --set image.tag="${{ secrets.DOCKER_REPOSITORY }}" \
             --set image.tag="sha-$(git rev-parse --short HEAD)"
         working-directory: chart/
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      - name: Get ingress details
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        run: |
+          kubectl get ingress -n k8s-demo
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
