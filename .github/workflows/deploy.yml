@@ -96,6 +96,7 @@ jobs:
             --set nginxingress.enabled=true \
             --set certmanager.enabled=true \
             --set certmanager.issuer.email=${{ secrets.CERTIFICATE_REGISTRATION_EMAIL }} \
+            --set image.tag="${{ secrets.DOCKER_REPOSITORY }}" \
             --set image.tag="sha-$(git rev-parse --short HEAD)"
         working-directory: chart/
         env:
